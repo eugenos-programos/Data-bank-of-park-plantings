@@ -24,12 +24,11 @@ def create_table(frame, data, col_names):
             entry.grid(row=0, column=col_index)
             entry.insert(tk.END, col_name)
 
-    for row_index in range(1, len(data)):
+    for row_index in range(1, len(data) + 1):
         for col_index in range(len(col_names)):
             entry = ttk.Entry(frame, width=20, font=('Arial', 16,' bold'))
             entry.grid(row=row_index, column=col_index)
             entry.insert(tk.END, data[row_index - 1][col_index])
-
     return entry
 
 class View():
@@ -95,30 +94,55 @@ class View():
         self.clean_up_frame()
         data = self.controller.get_worker_info()
         self.parent.title('Найти информацию о работниках')
+        col_names = ['Статус', 'ФИО', 'Адрес', 'Телефон', 'Дата Рождения']
+        create_table(self.frame, data, col_names)
+        self.date_box = bind_textbox(self.frame, 'Введите дату...', size=(2, 30))
+        self.date_box.grid(row=len(data) + 2, column=1, pady=20)
+        ttk.Button(self.frame, text='Искать рабочих', command=self.search_workers).grid(row=len(data) + 2, column=4, pady=20)
+        ttk.Button(self.frame, text='Выйти в главное меню', command=self.start_menu).grid(row=len(data) + 3, column=1, pady=20)
+
+    def search_workers(self):
+        date = self.date_box.get('1.0', tk.END)[:-1]
+        self.clean_up_frame()
+        data = self.controller.search_workers(date)
         col_names = ['Статус', 'ФИО', 'Адрес', 'Телефон']
         create_table(self.frame, data, col_names)
-        bind_textbox(self.frame, 'Введите дату...', size=(2, 30)).grid(row=len(data) + 2, column=1, pady=20)
-        ttk.Button(self.frame, text='Искать рабочих', command=None).grid(row=len(data) + 2, column=4, pady=20)
+        self.date_box = bind_textbox(self.frame, 'Введите дату...', size=(2, 30))
+        self.date_box.grid(row=len(data) + 2, column=1, pady=20)
+        ttk.Button(self.frame, text='Искать высадку', command=self.search_workers).grid(row=len(data) + 2, column=4, pady=20)
         ttk.Button(self.frame, text='Выйти в главное меню', command=self.start_menu).grid(row=len(data) + 3, column=1, pady=20)
 
     def see_plants_info(self):
         self.clean_up_frame()
-        data = self.controller.get_plant_info()
+        data = self.controller.get_watering_info()
         self.parent.title('Режимы полива растений')
-        col_names = ['ID', 'Вид', 'Возраст', 'День полива', 'Время полива', 'Кол-во воды']
+        col_names = ['ID растения', 'Дата полива', 'Размер полива', 'ИД работника', 'ИД декоратора']
         create_table(self.frame, data, col_names)
-        bind_textbox(self.frame, 'Введите вид...', size=(2, 30)).grid(row=len(data) + 2, column=1, pady=20)
-        ttk.Button(self.frame, text='Искать растения', command=self.search_plants).grid(row=len(data) + 2, column=4, pady=20)
+        self.plant_type = bind_textbox(self.frame, 'Введите вид...', size=(2, 30))
+        self.plant_type.grid(row=len(data) + 2, column=1, pady=20)
+        ttk.Button(self.frame, text='Искать растения', command=self.watering_search).grid(row=len(data) + 2, column=4, pady=20)
+        ttk.Button(self.frame, text='Выйти в главное меню', command=self.start_menu).grid(row=len(data) + 3, column=1, pady=20)
+
+    def watering_search(self):
+        type = self.plant_type.get('1.0', tk.END)[:-1]
+        self.clean_up_frame()
+        data = self.controller.get_watering_info(type)
+        self.parent.title('Режимы полива растений')
+        col_names = ['ID растения', 'Дата полива', 'Размер полива', 'ИД работника', 'ИД декоратора']
+        create_table(self.frame, data, col_names)
+        self.plant_type = bind_textbox(self.frame, 'Введите вид...', size=(2, 30))
+        self.plant_type.grid(row=len(data) + 2, column=1, pady=20)
+        ttk.Button(self.frame, text='Искать растения', command=self.watering_search).grid(row=len(data) + 2, column=4, pady=20)
         ttk.Button(self.frame, text='Выйти в главное меню', command=self.start_menu).grid(row=len(data) + 3, column=1, pady=20)
 
     def workers_info_managing(self):
         self.clean_up_frame()
-        self.id_delete_work = bind_textbox(self.frame, 'Введите имя удаляемого рабочего....', size=(2, 25))
+        self.id_delete_work = bind_textbox(self.frame, 'Введите ИД удаляемого рабочего....', size=(2, 25))
         self.id_delete_work.grid(row=0, column=0)
         self.del_work_out = None
         ttk.Button(self.frame, text='Удалить', command=self.delete_worker).grid(row=5, column=0, pady=10)
 
-        self.status_new_work = bind_textbox(self.frame, 'Статус нового рабочего...', size=(2, 30))
+        self.status_new_work = bind_textbox(self.frame, 'ИД нового рабочего...', size=(2, 30))
         self.status_new_work.grid(row=0, column=2)
         self.name_new_work = bind_textbox(self.frame, 'Имя нового рабочего...', (2, 30))
         self.name_new_work.grid(row=1, column=2)
@@ -126,63 +150,73 @@ class View():
         self.tel_new_work.grid(row=3, column=2)
         self.address_new_work = bind_textbox(self.frame, 'Адрес нового рабочего...', (2, 30))
         self.address_new_work.grid(row=4, column=2)
+        self.birth_work = bind_textbox(self.frame, 'Дата рождения рабочего...', (2, 30))
+        self.birth_work.grid(row=5, column=2)
         self.add_work_out = None
-        ttk.Button(self.frame, text='Добавить', command=self.add_new_worker).grid(row=5, column=2)
-        ttk.Button(self.frame, text='Выйти в меню', command=self.start_menu).grid(row=7, column=1, pady=60)
+        ttk.Button(self.frame, text='Добавить', command=self.add_new_worker).grid(row=6, column=2)
+        ttk.Button(self.frame, text='Выйти в меню', command=self.start_menu).grid(row=8, column=1, pady=60)
 
     def decorator_info_managing(self):
         self.clean_up_frame()
-        self.id_delete_work = bind_textbox(self.frame, 'Введите имя удаляемого декоратора....', size=(2, 25))
+        self.id_delete_work = bind_textbox(self.frame, 'Введите ИД удаляемого декоратора....', size=(2, 25))
         self.id_delete_work.grid(row=0, column=0)
         self.del_decor_out = None
         ttk.Button(self.frame, text='Удалить', command=self.delete_decorator).grid(row=6, column=0, pady=20)
 
+        self.id_new_decor = bind_textbox(self.frame, 'Ид нового декоратора...', (2, 30))
+        self.id_new_decor.grid(row=0, column=2)
+
         self.name_new_decor = bind_textbox(self.frame, 'Имя нового декоратора...', (2, 30))
-        self.name_new_decor.grid(row=0, column=2)
+        self.name_new_decor.grid(row=1, column=2)
 
         self.tel_new_decor = bind_textbox(self.frame, 'Телефон нового декоратора...', (2, 30))
-        self.tel_new_decor.grid(row=1, column=2)
+        self.tel_new_decor.grid(row=2, column=2)
 
         self.address_new_decor = bind_textbox(self.frame, 'Адрес нового декоратора...', (2, 30))
-        self.address_new_decor.grid(row=2, column=2)
+        self.address_new_decor.grid(row=3, column=2)
 
         self.educ_new_decor = bind_textbox(self.frame, 'Образование декоратора...', (2, 30))
-        self.educ_new_decor.grid(row=3, column=2)
+        self.educ_new_decor.grid(row=4, column=2)
 
         self.univer_new_decor = bind_textbox(self.frame, 'ВУЗ декоратора...', (2, 30))
-        self.univer_new_decor.grid(row=4, column=2)
+        self.univer_new_decor.grid(row=5, column=2)
 
         self.educ_type_new_decor = bind_textbox(self.frame, 'Тип образования декоратора...', (2, 30))
-        self.educ_type_new_decor.grid(row=5, column=2) 
+        self.educ_type_new_decor.grid(row=6, column=2) 
+
+        self.birthdate_decor = bind_textbox(self.frame, 'Рождение декоратора...', (2, 30))
+        self.birthdate_decor.grid(row=7, column=2) 
         self.add_decor_out = None
-        ttk.Button(self.frame, text='Добавить', command=self.add_new_decorator).grid(row=6, column=2)
-        ttk.Button(self.frame, text='Выйти в меню', command=self.start_menu).grid(row=7, column=1, pady=60)
+        ttk.Button(self.frame, text='Добавить', command=self.add_new_decorator).grid(row=8, column=2)
+        ttk.Button(self.frame, text='Выйти в меню', command=self.start_menu).grid(row=9, column=1, pady=60)
 
     def add_new_decorator(self):
         if self.add_decor_out:
             self.add_decor_out.destroy()
-        name = self.name_new_decor.get('1.0', tk.END)[:-1]
-        tel = self.tel_new_decor.get('1.0', tk.END)[:-1]
-        address = self.address_new_decor.get('1.0', tk.END)[:-1]
-        educ = self.educ_new_decor.get('1.0', tk.END)[:-1]
-        unver = self.univer_new_decor.get('1.0', tk.END)[:-1]
-        educ_type = self.educ_type_new_decor.get('1.0', tk.END)[:-1]
-        data = (name, tel, address, educ, unver, educ_type)
         try:
+            id = int(self.id_new_decor.get('1.0', tk.END))
+            name = self.name_new_decor.get('1.0', tk.END)[:-1]
+            tel = self.tel_new_decor.get('1.0', tk.END)[:-1]
+            address = self.address_new_decor.get('1.0', tk.END)[:-1]
+            educ = self.educ_new_decor.get('1.0', tk.END)[:-1]
+            unver = self.univer_new_decor.get('1.0', tk.END)[:-1]
+            educ_type = self.educ_type_new_decor.get('1.0', tk.END)[:-1]
+            birthdate = self.birthdate_decor.get('1.0', tk.END)[:-1]
+            data = (id, name, tel, address, educ, unver, educ_type, birthdate)
             self.controller.add_decorator(data)
         except Exception as exc:
             self.add_decor_out = tk.Label(self.frame, text=exc, fg='#f60404')
-            self.add_decor_out.grid(row=7, column=2, pady=10)
+            self.add_decor_out.grid(row=9, column=2, pady=10)
         else:
             self.add_decor_out = tk.Label(self.frame, text='Worker is added', fg='#008000')
-            self.add_decor_out.grid(row=7, column=2, pady=10)
+            self.add_decor_out.grid(row=9, column=2, pady=10)
 
     def delete_decorator(self):
         if self.del_decor_out:
             self.del_decor_out.destroy()
         try:
-            name = self.id_delete_work.get('1.0', tk.END)[:-1]
-            self.controller.delete_decorator(name)
+            id = int(self.id_delete_work.get('1.0', tk.END))
+            self.controller.delete_decorator(id)
         except Exception as exc:
             self.del_decor_out = tk.Label(self.frame, text=exc, fg='#f60404')
             self.del_decor_out.grid(row=3, column=0, pady=10)
@@ -245,7 +279,7 @@ class View():
         if self.del_park_out:
             self.del_park_out.destroy()
         try:
-            id = int(self.id_delete_park.get('1.0', tk.END)[:-1])
+            id = int(self.id_delete_park.get('1.0', tk.END))
             self.controller.delete_park(id)
         except Exception as exc:
             self.del_park_out = tk.Label(self.frame, text=exc, fg='#f60404')
@@ -258,7 +292,7 @@ class View():
         if self.del_zone_out:
             self.del_zone_out.destroy()
         try:
-            id = int(self.id_delete_zone.get('1.0', tk.END)[:-1])
+            id = int(self.id_delete_zone.get('1.0', tk.END))
             self.controller.delete_zone(id)
         except Exception as exc:
             self.del_zone_out = tk.Label(self.frame, text=exc, fg='#f60404')
@@ -278,23 +312,23 @@ class View():
         self.id_new_plant.grid(row=0, column=2)
         self.type_plant = bind_textbox(self.frame, 'Тип нового растения...', (2, 30))
         self.type_plant.grid(row=1, column=2)
-        self.per_plant = bind_textbox(self.frame, 'Периодичность полива растения...', (2, 30))
-        self.per_plant.grid(row=3, column=2)
-        self.size_plant = bind_textbox(self.frame, 'Размер полива растения...', (2, 30))
-        self.size_plant.grid(row=4, column=2)
+        self.age_plant = bind_textbox(self.frame, 'Возраст растения...', (2, 30))
+        self.age_plant.grid(row=3, column=2)
+        self.zone_id_plant = bind_textbox(self.frame, 'Ид зоны растения...', (2, 30))
+        self.zone_id_plant.grid(row=4, column=2)
         self.add_plant_out = None
         ttk.Button(self.frame, text='Добавить', command=self.add_new_plant).grid(row=5, column=2)
-        ttk.Button(self.frame, text='Выйти в меню', command=self.start_menu).grid(row=7, column=2, pady=60)
+        ttk.Button(self.frame, text='Выйти в меню', command=self.start_menu).grid(row=7, column=1, pady=60)
 
     def add_new_plant(self):
         if self.add_plant_out:
             self.add_plant_out.destroy()
-        id = self.id_new_plant.get('1.0', tk.END)[:-1]
-        type = self.type_plant.get('1.0', tk.END)[:-1]
-        per = self.per_plant.get('1.0', tk.END)[:-1]
-        size = self.size_plant.get('1.0', tk.END)[:-1]
-        data = (id, type, per, size)
         try:
+            id = int(self.id_new_plant.get('1.0', tk.END))
+            type = self.type_plant.get('1.0', tk.END)[:-1]
+            age = int(self.age_plant.get('1.0', tk.END))
+            zone_id = int(self.zone_id_plant.get('1.0', tk.END))
+            data = (id, type, age, zone_id)
             self.controller.add_plant(data)
         except Exception as exc:
             self.add_plant_out = tk.Label(self.frame, text=exc, fg='#f60404')
@@ -307,57 +341,67 @@ class View():
         if self.del_plant_out:
             self.del_plant_out.destroy()
         try:
-            id = int(self.id_delete_work.get('1.0', tk.END))[:-1]
-            self.controller.delete_worker(id)
+            id = int(self.id_delete_plant.get('1.0', tk.END))
+            self.controller.delete_plant(id)
         except Exception as exc:
             self.del_plant_out = tk.Label(self.frame, text=exc, fg='#f60404')
             self.del_plant_out.grid(row=3, column=0, pady=10)
         else:
-            self.del_plant_out = tk.Label(self.frame, text=f'Worker deleted', fg='#008000')
+            self.del_plant_out = tk.Label(self.frame, text=f'Plant is deleted', fg='#008000')
             self.del_plant_out.grid(row=3, column=0, pady=10)
 
     def add_new_worker(self):
         if self.add_work_out:
             self.add_work_out.destroy()
-        status = self.status_new_work.get('1.0', tk.END)[:-1]
-        name = self.name_new_work.get('1.0', tk.END)[:-1]
-        tel = self.tel_new_work.get('1.0', tk.END)[:-1]
-        address = self.address_new_work.get('1.0', tk.END)[:-1]
-        data = (status, name, tel, address)
         try:
+            id = int(self.status_new_work.get('1.0', tk.END))
+            name = self.name_new_work.get('1.0', tk.END)[:-1]
+            tel = self.tel_new_work.get('1.0', tk.END)[:-1]
+            address = self.address_new_work.get('1.0', tk.END)[:-1]
+            birthdate = self.birth_work.get('1.0', tk.END)[:-1]
+            data = (id, name, tel, address, birthdate)
             self.controller.add_worker(data)
         except Exception as exc:
             self.add_work_out = tk.Label(self.frame, text=exc, fg='#f60404')
-            self.add_work_out.grid(row=6, column=2, pady=10)
+            self.add_work_out.grid(row=7, column=2, pady=10)
         else:
             self.add_work_out = tk.Label(self.frame, text='Worker is added', fg='#008000')
-            self.adadd_work_outd_out.grid(row=6, column=2, pady=10)
+            self.add_work_out.grid(row=7, column=2, pady=10)
     
     def delete_worker(self):
         if self.del_work_out:
             self.del_work_out.destroy()
         try:
-            id = int(self.id_delete_work.get('1.0', tk.END))[:-1]
+            id = int(self.id_delete_work.get('1.0', tk.END))
             self.controller.delete_worker(id)
         except Exception as exc:
             self.del_work_out = tk.Label(self.frame, text=exc, fg='#f60404')
             self.del_work_out.grid(row=3, column=0, pady=10)
         else:
-            self.del_work_out = tk.Label(self.frame, text=f'Worker deleted', fg='#008000')
+            self.del_work_out = tk.Label(self.frame, text=f'Worker is deleted', fg='#008000')
             self.del_work_out.grid(row=3, column=0, pady=10)
 
     def see_greenplaces_info(self):
         self.clean_up_frame()
         data = self.controller.get_greenplaces_info()
         self.parent.title('Найти информацию о насаждениях')
-        col_names = ['ID', 'Вид', 'Дата высадки', 'Возраст', 'Парк', 'Зона']
+        col_names = ['ID', 'Вид', 'Дата высадки', 'Возраст', 'Зона', 'Парк']
         create_table(self.frame, data, col_names)
-        bind_textbox(self.frame, 'Введите вид...', size=(2, 30)).grid(row=len(data) + 2, column=1, pady=20)
+        self.plant_type = bind_textbox(self.frame, 'Введите вид...', size=(2, 30))
+        self.plant_type.grid(row=len(data) + 2, column=1, pady=20)
         ttk.Button(self.frame, text='Искать высадку', command=self.search_plants).grid(row=len(data) + 2, column=4, pady=20)
         ttk.Button(self.frame, text='Выйти в главное меню', command=self.start_menu).grid(row=len(data) + 3, column=1, pady=20)
 
     def search_plants(self):
-        pass
+        plant_type_text = self.plant_type.get('1.0', tk.END)[:-1]
+        self.clean_up_frame()
+        data = self.controller.search_plants(plant_type_text)
+        col_names = ['ID', 'Вид', 'Дата высадки', 'Возраст', 'Зона', 'Парк']
+        create_table(self.frame, data, col_names)
+        self.plant_type = bind_textbox(self.frame, 'Введите вид...', size=(2, 30))
+        self.plant_type.grid(row=len(data) + 2, column=1, pady=20)
+        ttk.Button(self.frame, text='Искать высадку', command=self.search_plants).grid(row=len(data) + 2, column=4, pady=20)
+        ttk.Button(self.frame, text='Выйти в главное меню', command=self.start_menu).grid(row=len(data) + 3, column=1, pady=20)
 
     def set_controller(self, controller):
         self.controller = controller

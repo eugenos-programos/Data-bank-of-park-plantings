@@ -42,3 +42,21 @@ class Controller:
 
     def delete_zone(self, id):
         self.model.delete_zone(id)
+
+    def add_plant(self, data):
+        self.model.add_plant(data)
+
+    def delete_plant(self, id):
+        self.model.delete_plant(id)
+
+    def delete_decorator(self, id):
+        self.model.delete_decorator(id)
+
+    def get_watering_info(self, type=None):
+        return self.model.get_watering_info(type)
+
+    def search_plants(self, type):
+        return self.model.search_plants(type)
+
+    def search_workers(self, date):
+        return self.model.search_workers(date)
